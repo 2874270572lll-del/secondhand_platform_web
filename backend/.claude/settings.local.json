@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b *.log)",
+      "Bash(del \"D:\\\\Web\\\\大作业\\\\backend\\\\NACOS_GUIDE.md\")",
+      "Bash(rm:*)"
+    ]
+  }
+}
