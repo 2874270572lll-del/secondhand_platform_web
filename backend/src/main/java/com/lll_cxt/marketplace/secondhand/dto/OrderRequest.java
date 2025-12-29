@@ -1,5 +1,6 @@
 package com.lll_cxt.marketplace.secondhand.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -8,6 +9,9 @@ import jakarta.validation.constraints.NotNull;
 public class OrderRequest {
     @NotNull(message = "商品ID不能为空")
     private Long productId;
+
+    @Min(value = 1, message = "购买数量必须大于0")
+    private Integer quantity = 1;  // 添加购买数量字段，默认1
 
     private String buyerMessage;
 
@@ -18,6 +22,14 @@ public class OrderRequest {
 
     public void setProductId(Long productId) {
         this.productId = productId;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 
     public String getBuyerMessage() {

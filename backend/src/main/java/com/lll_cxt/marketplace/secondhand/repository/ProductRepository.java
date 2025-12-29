@@ -28,4 +28,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Page<Product> searchByKeyword(@Param("status") String status,
                                    @Param("keyword") String keyword,
                                    Pageable pageable);
+
+    Page<Product> findByStatusAndCategoryIdAndQuantityGreaterThan(String status, Long categoryId, Integer quantity, Pageable pageable);
+
+    Page<Product> findByStatusAndQuantityGreaterThan(String status, Integer quantity, Pageable pageable);
 }

@@ -20,9 +20,16 @@
             <el-icon><Star /></el-icon>
             <span>我的收藏</span>
           </el-menu-item>
-          <el-menu-item index="/my/messages">
+          <el-menu-item index="/my/messages" class="message-menu-item">
             <el-icon><ChatDotSquare /></el-icon>
             <span>我的消息</span>
+            <!-- 未读消息提示 -->
+            <el-badge 
+              v-if="messageStore.totalUnreadCount > 0"
+              :value="messageStore.totalUnreadCount" 
+              :max="99"
+              class="menu-badge"
+            />
           </el-menu-item>
           <el-menu-item index="/my/profile">
             <el-icon><User /></el-icon>
@@ -50,13 +57,31 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useMessageStore } from '../store/message'
 
 const route = useRoute()
 const router = useRouter()
+const messageStore = useMessageStore()
 
 const activeMenu = computed(() => route.path)
+
+// 监听路由变化，当进入消息页面时更新未读数量
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath === '/my/messages') {
+      // 可以在这里调用接口更新已读状态
+      // 比如：messageStore.fetchUnreadCount()
+    }
+  }
+)
+
+// 组件挂载时获取未读消息数
+onMounted(() => {
+  messageStore.fetchUnreadCount()
+})
 </script>
 
 <style scoped>
@@ -78,5 +103,17 @@ const activeMenu = computed(() => route.path)
 
 .el-main {
   padding: 20px;
+}
+
+/* 消息菜单项样式 */
+.message-menu-item {
+  position: relative;
+}
+
+.menu-badge {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 </style>

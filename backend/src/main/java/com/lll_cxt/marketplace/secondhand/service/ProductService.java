@@ -3,6 +3,7 @@ package com.lll_cxt.marketplace.secondhand.service;
 import com.lll_cxt.marketplace.secondhand.dto.PageResponse;
 import com.lll_cxt.marketplace.secondhand.dto.ProductDTO;
 import com.lll_cxt.marketplace.secondhand.dto.ProductRequest;
+import com.lll_cxt.marketplace.secondhand.dto.ProductUpdateRequest;
 import com.lll_cxt.marketplace.secondhand.entity.Category;
 import com.lll_cxt.marketplace.secondhand.entity.Product;
 import com.lll_cxt.marketplace.secondhand.entity.User;
@@ -58,8 +59,40 @@ public class ProductService {
     }
 
     /**
-     * 更新商品
+     * 更新商品 - 修改为使用ProductUpdateRequest
      */
+    @Transactional
+    public ProductDTO updateProduct(Long productId, Long userId, ProductUpdateRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException("商品不存在"));
+
+        // 检查权限
+        if (!product.getSellerId().equals(userId)) {
+            throw new BusinessException("无权限修改此商品");
+        }
+
+        // 只更新允许修改的字段，而不是复制所有属性
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
+        }
+        if (request.getPrice() != null) {
+            product.setPrice(request.getPrice());
+        }
+        if (request.getContact() != null) {
+            product.setContact(request.getContact());
+        }
+        if (request.getQuantity() != null) {
+            product.setQuantity(request.getQuantity());
+        }
+        if (request.getImages() != null) {
+            product.setImages(request.getImages());
+        }
+
+        Product savedProduct = productRepository.save(product);
+        return convertToDTO(savedProduct, userId);
+    }
+
+    // 保持原有的updateProduct方法重载，用于向后兼容（如果需要的话）
     @Transactional
     public ProductDTO updateProduct(Long productId, Long userId, ProductRequest request) {
         Product product = productRepository.findById(productId)
@@ -119,9 +152,13 @@ public class ProductService {
 
         Page<Product> productPage;
         if (categoryId != null && categoryId > 0) {
-            productPage = productRepository.findByStatusAndCategoryId("ON_SALE", categoryId, pageable);
+            // 重要：确保只查询可售状态且库存>0的商品
+            productPage = productRepository.findByStatusAndCategoryIdAndQuantityGreaterThan(
+                    "ON_SALE", categoryId, 0, pageable);
         } else {
-            productPage = productRepository.findByStatus("ON_SALE", pageable);
+            // 重要：确保只查询可售状态且库存>0的商品
+            productPage = productRepository.findByStatusAndQuantityGreaterThan(
+                    "ON_SALE", 0, pageable);
         }
 
         List<ProductDTO> records = productPage.getContent().stream()
@@ -199,6 +236,7 @@ public class ProductService {
      */
     private ProductDTO convertToDTO(Product product, Long currentUserId) {
         ProductDTO dto = new ProductDTO();
+        dto.setQuantity(product.getQuantity());
         BeanUtils.copyProperties(product, dto);
 
         // 设置卖家信息

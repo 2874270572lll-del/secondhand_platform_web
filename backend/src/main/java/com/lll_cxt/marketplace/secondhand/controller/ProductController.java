@@ -3,6 +3,7 @@ package com.lll_cxt.marketplace.secondhand.controller;
 import com.lll_cxt.marketplace.secondhand.dto.PageResponse;
 import com.lll_cxt.marketplace.secondhand.dto.ProductDTO;
 import com.lll_cxt.marketplace.secondhand.dto.ProductRequest;
+import com.lll_cxt.marketplace.secondhand.dto.ProductUpdateRequest;
 import com.lll_cxt.marketplace.secondhand.dto.Result;
 import com.lll_cxt.marketplace.secondhand.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +39,7 @@ public class ProductController {
      */
     @PutMapping("/update/{id}")
     public Result<ProductDTO> updateProduct(@PathVariable Long id,
-                                            @Valid @RequestBody ProductRequest request,
+                                            @Valid @RequestBody ProductUpdateRequest request,  // 改为使用ProductUpdateRequest
                                             HttpServletRequest httpRequest) {
         Long userId = (Long) httpRequest.getAttribute("userId");
         ProductDTO product = productService.updateProduct(id, userId, request);

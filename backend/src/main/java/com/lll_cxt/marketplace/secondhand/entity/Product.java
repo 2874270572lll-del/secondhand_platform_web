@@ -45,7 +45,7 @@ public class Product {
     private Integer favoriteCount = 0;
 
     @Column(name = "quantity", nullable = false)
-    private Integer quantity = 1;
+    private Integer quantity;
 
     @Column(name = "seller_id", nullable = false)
     private Long sellerId;

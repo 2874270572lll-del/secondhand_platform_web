@@ -31,6 +31,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+  path: '/product/edit/:id',
+  name: 'EditProduct',
+  component: () => import('../views/PublishProduct.vue'),
+  meta: { requiresAuth: true }
+},
+  {
     path: '/publish',
     name: 'PublishProduct',
     component: () => import('../views/PublishProduct.vue'),
@@ -41,6 +47,7 @@ const routes = [
     name: 'My',
     component: () => import('../views/My.vue'),
     meta: { requiresAuth: true },
+    redirect: '/my/products',
     children: [
       {
         path: 'products',

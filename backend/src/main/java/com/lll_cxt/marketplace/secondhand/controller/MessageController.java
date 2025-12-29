@@ -1,5 +1,6 @@
 package com.lll_cxt.marketplace.secondhand.controller;
 
+import com.lll_cxt.marketplace.secondhand.dto.ConversationDTO;
 import com.lll_cxt.marketplace.secondhand.dto.MessageDTO;
 import com.lll_cxt.marketplace.secondhand.dto.Result;
 import com.lll_cxt.marketplace.secondhand.entity.Message;
@@ -74,10 +75,11 @@ public class MessageController {
 
     /**
      * 发送消息（HTTP接口）
+     * 【修复】将 @RequestHeader 改为 @RequestAttribute
      */
     @PostMapping("/send")
     public Result<MessageDTO> sendMessageHttp(
-            @RequestHeader("userId") Long userId,
+            @RequestAttribute("userId") Long userId,
             @RequestBody MessageDTO messageDTO) {
         // 设置发送者ID
         messageDTO.setSenderId(userId);
@@ -99,10 +101,11 @@ public class MessageController {
 
     /**
      * 获取聊天历史
+     * 【修复】将 @RequestHeader 改为 @RequestAttribute
      */
     @GetMapping("/history/{partnerId}")
     public Result<List<MessageDTO>> getChatHistory(
-            @RequestHeader("userId") Long userId,
+            @RequestAttribute("userId") Long userId,
             @PathVariable Long partnerId) {
         List<Message> messages = messageRepository.findChatHistory(userId, partnerId);
         List<MessageDTO> dtos = messages.stream()
@@ -122,29 +125,32 @@ public class MessageController {
 
     /**
      * 获取聊天会话列表
+     * 【修复】将 @RequestHeader 改为 @RequestAttribute
      */
-    @GetMapping("/conversations")
-    public Result<List<User>> getConversations(@RequestHeader("userId") Long userId) {
-        List<Long> partnerIds = messageRepository.findChatPartners(userId);
-        List<User> partners = userRepository.findAllById(partnerIds);
-        return Result.success("获取成功", partners);
-    }
+//    @GetMapping("/conversations")
+//    public Result<List<User>> getConversations(@RequestAttribute("userId") Long userId) {
+//        List<Long> partnerIds = messageRepository.findChatPartners(userId);
+//        List<User> partners = userRepository.findAllById(partnerIds);
+//        return Result.success("获取成功", partners);
+//    }
 
     /**
      * 获取未读消息数量
+     * 【修复】将 @RequestHeader 改为 @RequestAttribute
      */
     @GetMapping("/unread-count")
-    public Result<Long> getUnreadCount(@RequestHeader("userId") Long userId) {
+    public Result<Long> getUnreadCount(@RequestAttribute("userId") Long userId) {
         Long count = messageRepository.countByReceiverIdAndIsReadFalse(userId);
         return Result.success("获取成功", count);
     }
 
     /**
      * 标记消息为已读
+     * 【修复】将 @RequestHeader 改为 @RequestAttribute
      */
     @PutMapping("/mark-read/{partnerId}")
     public Result<Void> markAsRead(
-            @RequestHeader("userId") Long userId,
+            @RequestAttribute("userId") Long userId,
             @PathVariable Long partnerId) {
         List<Message> messages = messageRepository.findChatHistory(userId, partnerId);
         messages.stream()
@@ -187,4 +193,30 @@ public class MessageController {
 
         return dto;
     }
+    @GetMapping("/conversations")
+    public Result<List<ConversationDTO>> getConversations(@RequestAttribute("userId") Long userId) {
+        List<Long> partnerIds = messageRepository.findChatPartners(userId);
+        List<User> partners = userRepository.findAllById(partnerIds);
+
+        // 转换为DTO并添加未读消息数
+        List<ConversationDTO> conversations = partners.stream().map(partner -> {
+            ConversationDTO dto = new ConversationDTO();
+            dto.setId(partner.getId());
+            dto.setUsername(partner.getUsername());
+            dto.setNickname(partner.getNickname());
+            dto.setAvatar(partner.getAvatar());
+
+            // 计算该会话的未读消息数
+            Long unreadCount = messageRepository.countBySenderIdAndReceiverIdAndIsReadFalse(
+                    partner.getId(),
+                    userId
+            );
+            dto.setUnreadCount(unreadCount);
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        return Result.success("获取成功", conversations);
+    }
+
 }

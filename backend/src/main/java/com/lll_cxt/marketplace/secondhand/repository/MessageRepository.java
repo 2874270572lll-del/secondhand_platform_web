@@ -33,4 +33,5 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
      * 获取未读消息数量
      */
     Long countByReceiverIdAndIsReadFalse(Long receiverId);
+    Long countBySenderIdAndReceiverIdAndIsReadFalse(Long senderId, Long receiverId);
 }

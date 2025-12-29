@@ -20,6 +20,9 @@ public class Order {
     @Column(name = "order_no", nullable = false, unique = true, length = 50)
     private String orderNo;
 
+    @Column(nullable = false)
+    private Integer quantity = 1;  // 购买数量，默认为1
+
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
@@ -58,6 +61,28 @@ public class Order {
     @JoinColumn(name = "seller_id", insertable = false, updatable = false)
     private User seller;
 
+    public enum Status {
+        PENDING("待支付"),
+        PAID("已支付"),
+        CONFIRMED("已确认"),
+        SHIPPED("已发货"),
+        RECEIVED("已收货"),
+        COMPLETED("已完成"),
+        CANCELLED("已取消"),
+        REFUNDING("退款中"),
+        REFUNDED("已退款");
+
+        private final String description;
+
+        Status(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -73,6 +98,14 @@ public class Order {
 
     public void setOrderNo(String orderNo) {
         this.orderNo = orderNo;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 
     public Long getProductId() {

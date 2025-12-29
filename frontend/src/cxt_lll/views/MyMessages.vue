@@ -16,11 +16,24 @@
           class="conversation-item"
           @click="openChat(partner)"
         >
-          <el-avatar :size="50" :src="partner.avatar || undefined">
-            {{ partner.nickname?.charAt(0) }}
-          </el-avatar>
+          <el-badge 
+            :value="partner.unreadCount" 
+            :hidden="!partner.unreadCount || partner.unreadCount === 0"
+            :max="99"
+            class="conversation-badge"
+          >
+            <el-avatar :size="50" :src="partner.avatar || undefined">
+              {{ partner.nickname?.charAt(0) }}
+            </el-avatar>
+          </el-badge>
+          
           <div class="conversation-info">
-            <div class="conversation-name">{{ partner.nickname }}</div>
+            <div class="conversation-name">
+              {{ partner.nickname }}
+              <el-tag v-if="partner.unreadCount > 0" size="small" type="danger" effect="dark">
+                {{ partner.unreadCount }}条未读
+              </el-tag>
+            </div>
             <div class="conversation-preview">点击查看聊天记录</div>
           </div>
           <el-icon class="conversation-arrow"><ArrowRight /></el-icon>
@@ -33,6 +46,7 @@
       v-model="chatDialogVisible"
       :title="`与 ${currentPartner?.nickname} 的聊天`"
       width="600px"
+      @close="handleDialogClose"
     >
       <div class="chat-container">
         <div class="chat-messages" ref="chatMessagesRef">
@@ -62,13 +76,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { getConversations, getChatHistory, sendMessage as sendMsg, markAsRead } from '../api/message'
 import { useUserStore } from '../store/user'
+import { useMessageStore } from '../store/message'
 
 const userStore = useUserStore()
+const messageStore = useMessageStore()
+
 const conversations = ref([])
 const chatDialogVisible = ref(false)
 const currentPartner = ref(null)
@@ -76,11 +93,16 @@ const chatMessages = ref([])
 const chatMessage = ref('')
 const chatMessagesRef = ref(null)
 
+let pollingTimer = null
+
 // 加载会话列表
 const loadConversations = async () => {
   try {
     const res = await getConversations()
     conversations.value = res.data
+    
+    // 更新总未读数
+    await messageStore.fetchUnreadCount()
   } catch (error) {
     console.error('加载会话列表失败:', error)
   }
@@ -91,8 +113,25 @@ const openChat = async (partner) => {
   currentPartner.value = partner
   chatDialogVisible.value = true
   await loadChatHistory()
+  
   // 标记消息为已读
-  await markAsRead(partner.id)
+  if (partner.unreadCount > 0) {
+    await markAsRead(partner.id)
+    
+    // 更新当前会话的未读数为0
+    const conversation = conversations.value.find(c => c.id === partner.id)
+    if (conversation) {
+      conversation.unreadCount = 0
+    }
+    
+    // 刷新总未读数
+    await messageStore.fetchUnreadCount()
+  }
+}
+
+// 关闭对话框时刷新列表
+const handleDialogClose = () => {
+  loadConversations()
 }
 
 // 加载聊天历史
@@ -155,8 +194,31 @@ const formatTime = (dateString) => {
   })
 }
 
+// 开始轮询
+const startPolling = () => {
+  // 每20秒刷新一次
+  pollingTimer = setInterval(() => {
+    if (!chatDialogVisible.value) {
+      loadConversations()
+    }
+  }, 20000)
+}
+
+// 停止轮询
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
 onMounted(() => {
   loadConversations()
+  startPolling()
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 </script>
 
@@ -174,6 +236,10 @@ onMounted(() => {
   background-color: #f5f7fa;
 }
 
+.conversation-badge {
+  margin-right: 16px;
+}
+
 .conversation-info {
   flex: 1;
   margin-left: 16px;
@@ -184,6 +250,9 @@ onMounted(() => {
   font-weight: 500;
   color: #303133;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .conversation-preview {

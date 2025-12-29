@@ -42,7 +42,7 @@ public class OrderService {
     }
 
     /**
-     * 创建订单
+     * 创建订单（需要修改库存减少逻辑）
      */
     @Transactional
     public OrderDTO createOrder(Long buyerId, OrderRequest request) {
@@ -55,9 +55,13 @@ public class OrderService {
             throw new BusinessException("商品已下架或已售出");
         }
 
-        // 检查库存
-        if (product.getQuantity() == null || product.getQuantity() <= 0) {
-            throw new BusinessException("商品库存不足");
+        // 检查库存是否足够
+        if (product.getQuantity() == null || product.getQuantity() < request.getQuantity()) {
+            if (product.getQuantity() <= 0) {
+                product.setStatus("SOLD");
+                productRepository.save(product);
+            }
+            throw new BusinessException("商品库存不足，当前库存: " + product.getQuantity());
         }
 
         // 检查是否是自己的商品
@@ -72,15 +76,16 @@ public class OrderService {
         order.setBuyerId(buyerId);
         order.setSellerId(product.getSellerId());
         order.setPrice(product.getPrice());
+        order.setQuantity(request.getQuantity());  // 设置购买数量
         order.setStatus("PENDING");
         order.setBuyerMessage(request.getBuyerMessage());
 
         Order savedOrder = orderRepository.save(order);
 
         // 减少商品库存
-        product.setQuantity(product.getQuantity() - 1);
+        product.setQuantity(product.getQuantity() - request.getQuantity());  // 减去购买数量
 
-        // 如果库存为0，更新商品状态为已售出
+        // 只在库存确实为0时才设为SOLD
         if (product.getQuantity() <= 0) {
             product.setStatus("SOLD");
         }
@@ -88,6 +93,8 @@ public class OrderService {
 
         return convertToDTO(savedOrder);
     }
+
+
 
     /**
      * 获取我购买的订单列表
@@ -139,15 +146,120 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException("订单不存在"));
 
-        // 检查权限
-        if (!order.getBuyerId().equals(userId) && !order.getSellerId().equals(userId)) {
-            throw new BusinessException("无权限操作此订单");
-        }
+        // 检查权限和状态流转规则
+        validateStatusTransition(order, userId, status);
 
+        String oldStatus = order.getStatus();
+
+        // 更新状态
         order.setStatus(status);
         Order savedOrder = orderRepository.save(order);
 
+        // 处理库存和商品状态
+        handleStockAndProductStatus(order, oldStatus, status);
+
         return convertToDTO(savedOrder);
+    }
+
+    /**
+     * 验证状态流转是否合法
+     */
+    private void validateStatusTransition(Order order, Long userId, String targetStatus) {
+        String currentStatus = order.getStatus();
+
+        // 检查权限
+        boolean isBuyer = order.getBuyerId().equals(userId);
+        boolean isSeller = order.getSellerId().equals(userId);
+
+        if (!isBuyer && !isSeller) {
+            throw new BusinessException("无权限操作此订单");
+        }
+
+        // 状态流转规则
+        switch (currentStatus) {
+            case "PENDING":
+                // 买家可以：支付、取消
+                if ("PAID".equals(targetStatus) || "CANCELLED".equals(targetStatus)) {
+                    if (!isBuyer) {
+                        throw new BusinessException("只有买家可以支付或取消待支付订单");
+                    }
+                } else {
+                    throw new BusinessException("待支付订单只能变更为已支付或已取消");
+                }
+                break;
+
+            case "PAID":
+                // 卖家可以：确认订单
+                if ("CONFIRMED".equals(targetStatus)) {
+                    if (!isSeller) {
+                        throw new BusinessException("只有卖家可以确认已支付订单");
+                    }
+                } else {
+                    throw new BusinessException("已支付订单只能变更为已确认");
+                }
+                break;
+
+            case "CONFIRMED":
+                // 卖家可以：发货
+                if ("SHIPPED".equals(targetStatus)) {
+                    if (!isSeller) {
+                        throw new BusinessException("只有卖家可以发货");
+                    }
+                } else {
+                    throw new BusinessException("已确认订单只能变更为已发货");
+                }
+                break;
+
+            case "SHIPPED":
+                // 买家可以：确认收货
+                if ("RECEIVED".equals(targetStatus)) {
+                    if (!isBuyer) {
+                        throw new BusinessException("只有买家可以确认收货");
+                    }
+                } else {
+                    throw new BusinessException("已发货订单只能变更为已收货");
+                }
+                break;
+
+            case "RECEIVED":
+                // 系统自动或手动完成
+                if ("COMPLETED".equals(targetStatus)) {
+                    // 双方都可以完成订单
+                } else {
+                    throw new BusinessException("已收货订单只能变更为已完成");
+                }
+                break;
+
+            case "COMPLETED":
+            case "CANCELLED":
+            case "REFUNDING":
+            case "REFUNDED":
+                throw new BusinessException("订单已结束，不能修改状态");
+
+            default:
+                throw new BusinessException("未知订单状态");
+        }
+    }
+
+    /**
+     * 处理库存和商品状态变化
+     */
+    private void handleStockAndProductStatus(Order order, String oldStatus, String newStatus) {
+        Product product = productRepository.findById(order.getProductId())
+                .orElseThrow(() -> new BusinessException("商品不存在"));
+
+        // 订单取消：恢复库存
+        if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(oldStatus)) {
+            product.setQuantity(product.getQuantity() + order.getQuantity());  // 恢复购买数量
+            // 如果商品状态是SOLD，改回ON_SALE
+            if ("SOLD".equals(product.getStatus())) {
+                product.setStatus("ON_SALE");
+            }
+            productRepository.save(product);
+        }
+
+        // 订单完成：商品状态保持不变（已售出）
+        // 其他状态变化不需要处理库存
     }
 
     /**

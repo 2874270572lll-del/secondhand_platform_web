@@ -60,6 +60,50 @@ public class OrderController {
     }
 
     /**
+     * 支付订单
+     */
+    @PutMapping("/pay/{id}")
+    public Result<OrderDTO> payOrder(@PathVariable Long id,
+                                     HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        OrderDTO order = orderService.updateOrderStatus(id, userId, "PAID");
+        return Result.success("支付成功", order);
+    }
+
+    /**
+     * 发货
+     */
+    @PutMapping("/ship/{id}")
+    public Result<OrderDTO> shipOrder(@PathVariable Long id,
+                                      HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        OrderDTO order = orderService.updateOrderStatus(id, userId, "SHIPPED");
+        return Result.success("发货成功", order);
+    }
+
+    /**
+     * 确认收货
+     */
+    @PutMapping("/receive/{id}")
+    public Result<OrderDTO> receiveOrder(@PathVariable Long id,
+                                         HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        OrderDTO order = orderService.updateOrderStatus(id, userId, "RECEIVED");
+        return Result.success("确认收货成功", order);
+    }
+
+    /**
+     * 取消订单
+     */
+    @PutMapping("/cancel/{id}")
+    public Result<OrderDTO> cancelOrder(@PathVariable Long id,
+                                        HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        OrderDTO order = orderService.updateOrderStatus(id, userId, "CANCELLED");
+        return Result.success("取消成功", order);
+    }
+
+    /**
      * 更新订单状态
      */
     @PutMapping("/update-status/{id}")

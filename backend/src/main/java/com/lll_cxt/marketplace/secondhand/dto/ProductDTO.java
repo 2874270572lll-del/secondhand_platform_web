@@ -26,8 +26,17 @@ public class ProductDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isFavorite;
+    private Integer quantity;
 
     // Getters and Setters
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
     public Long getId() {
         return id;
     }

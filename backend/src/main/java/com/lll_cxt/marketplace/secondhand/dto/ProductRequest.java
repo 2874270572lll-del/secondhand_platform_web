@@ -22,6 +22,7 @@ public class ProductRequest {
     private String images;
     private String location;
     private String contact;
+    private Integer quantity = 1;
 
     // Getters and Setters
     public String getTitle() {
@@ -30,6 +31,14 @@ public class ProductRequest {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 
     public String getDescription() {

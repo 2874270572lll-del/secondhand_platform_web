@@ -21,6 +21,7 @@
         </el-input>
 
         <div class="nav-menu">
+          <!-- 未登录状态 -->
           <el-button
             v-if="!userStore.isLoggedIn()"
             type="primary"
@@ -28,21 +29,32 @@
           >
             登录
           </el-button>
-          <el-dropdown v-else @command="handleCommand">
-            <span class="user-dropdown">
-              <el-avatar :size="32" :src="userStore.userInfo?.avatar || undefined">
-                {{ userStore.userInfo?.nickname?.charAt(0) }}
-              </el-avatar>
-              <span style="margin-left: 8px">{{ userStore.userInfo?.nickname }}</span>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="my">个人中心</el-dropdown-item>
-                <el-dropdown-item command="publish">发布商品</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+
+          <!-- 已登录状态 -->
+          <template v-else>
+            <!-- 消息通知图标 -->
+            <div class="message-icon" @click="router.push('/my/messages')">
+              <MessageNotification />
+            </div>
+
+            <!-- 用户下拉菜单 -->
+            <el-dropdown @command="handleCommand">
+              <span class="user-dropdown">
+                <el-avatar :size="32" :src="userStore.userInfo?.avatar || undefined">
+                  {{ userStore.userInfo?.nickname?.charAt(0) }}
+                </el-avatar>
+                <span style="margin-left: 8px">{{ userStore.userInfo?.nickname }}</span>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="my">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="messages">我的消息</el-dropdown-item>
+                  <el-dropdown-item command="publish">发布商品</el-dropdown-item>
+                  <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
         </div>
       </div>
     </el-header>
@@ -62,49 +74,54 @@
     </div>
 
     <!-- 商品列表 -->
-    <div class="product-list">
-      <el-row :gutter="20" v-loading="loading">
-        <el-col
-          v-for="product in productList"
-          :key="product.id"
-          :xs="24"
-          :sm="12"
-          :md="8"
-          :lg="6"
-        >
-          <el-card
-            class="product-card"
-            :body-style="{ padding: '0' }"
-            shadow="hover"
-            @click="goToDetail(product.id)"
-          >
-            <img
-              :src="getProductImage(product.images)"
-              class="product-image"
-              alt="商品图片"
-            />
-            <div style="padding: 14px">
-              <div class="product-title">{{ product.title }}</div>
-              <div class="product-price">
-                <span class="price">¥{{ product.price }}</span>
-                <span v-if="product.originalPrice" class="original-price">
-                  ¥{{ product.originalPrice }}
-                </span>
-              </div>
-              <div class="product-info">
-                <span>
-                  <el-icon><View /></el-icon>
-                  {{ product.viewCount }}
-                </span>
-                <span>
-                  <el-icon><Star /></el-icon>
-                  {{ product.favoriteCount }}
-                </span>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+<div class="product-list">
+  <el-row :gutter="20" v-loading="loading">
+    <el-col
+      v-for="product in productList"
+      :key="product.id"
+      :xs="24"
+      :sm="12"
+      :md="8"
+      :lg="6"
+    >
+      <el-card
+        class="product-card"
+        :body-style="{ padding: '0' }"
+        shadow="hover"
+        @click="goToDetail(product.id)"
+      >
+        <img
+          :src="getProductImage(product.images)"
+          class="product-image"
+          alt="商品图片"
+        />
+        <div style="padding: 14px">
+          <div class="product-title">{{ product.title }}</div>
+          <div class="product-price">
+            <span class="price">¥{{ product.price }}</span>
+            <span v-if="product.originalPrice" class="original-price">
+              ¥{{ product.originalPrice }}
+            </span>
+          </div>
+          <!-- 添加库存显示 -->
+          <div class="product-stock">
+            <el-icon><Box /></el-icon>
+            库存: {{ product.quantity || 0 }} 件
+          </div>
+          <div class="product-info">
+            <span>
+              <el-icon><View /></el-icon>
+              {{ product.viewCount }}
+            </span>
+            <span>
+              <el-icon><Star /></el-icon>
+              {{ product.favoriteCount }}
+            </span>
+          </div>
+        </div>
+      </el-card>
+    </el-col>
+  </el-row>
 
       <!-- 空状态 -->
       <el-empty v-if="!loading && productList.length === 0" description="暂无商品" />
@@ -132,6 +149,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProductList, searchProducts } from '../api/product'
 import { getCategoryList } from '../api/category'
 import { useUserStore } from '../store/user'
+import MessageNotification from '../components/MessageNotification.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -218,6 +236,9 @@ const handleCommand = (command) => {
     case 'my':
       router.push('/my/products')
       break
+    case 'messages':
+      router.push('/my/messages')
+      break
     case 'publish':
       router.push('/publish')
       break
@@ -282,12 +303,33 @@ onMounted(() => {
 .nav-menu {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.message-icon {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+.message-icon:hover {
+  background-color: #f5f7fa;
 }
 
 .user-dropdown {
   display: flex;
   align-items: center;
   cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.user-dropdown:hover {
+  background-color: #f5f7fa;
 }
 
 .category-nav {
@@ -361,5 +403,18 @@ onMounted(() => {
 
 .product-info .el-icon {
   margin-right: 4px;
+}
+
+.product-stock {
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.product-stock .el-icon {
+  margin-right: 4px;
+  color: #409eff;
 }
 </style>
