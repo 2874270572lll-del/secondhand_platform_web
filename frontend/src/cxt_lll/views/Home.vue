@@ -48,9 +48,7 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="my">个人中心</el-dropdown-item>
-                  <el-dropdown-item command="messages">我的消息</el-dropdown-item>
-                  <el-dropdown-item command="publish">发布商品</el-dropdown-item>
-                  <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                  <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -235,12 +233,6 @@ const handleCommand = (command) => {
   switch (command) {
     case 'my':
       router.push('/my/products')
-      break
-    case 'messages':
-      router.push('/my/messages')
-      break
-    case 'publish':
-      router.push('/publish')
       break
     case 'logout':
       ElMessageBox.confirm('确定要退出登录吗？', '提示', {
