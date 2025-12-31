@@ -130,16 +130,41 @@ const goToRegister = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-secondary);
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
-  height: 60px;
+  padding: 0 40px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-md);
+  height: 70px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all var(--transition-normal);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* 滚动时导航栏效果 */
+.header:hover {
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+/* 添加微妙的渐变效果 */
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(64, 158, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
 }
 
 .header-left {
@@ -148,58 +173,152 @@ const goToRegister = () => {
 
 .logo {
   margin: 0;
-  font-size: 20px;
-  font-weight: bold;
-  color: #409eff;
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #6a82fb 50%, #fcb045 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.05em;
+  transition: all var(--transition-normal);
+  position: relative;
+  cursor: pointer;
+}
+
+.logo:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 4px 8px rgba(64, 158, 255, 0.3));
+}
+
+.logo::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(180deg, var(--primary-color) 0%, #6a82fb 100%);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.logo:hover::before {
+  opacity: 1;
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  margin: 0 40px;
 }
 
 .header-center .el-menu {
   border-bottom: none;
+  background-color: transparent;
+}
+
+/* 菜单样式覆盖 */
+.header-center :deep(.el-menu-item) {
+  color: var(--text-regular);
+  font-weight: 500;
+  font-size: 16px;
+  height: 70px;
+  line-height: 70px;
+  padding: 0 26px;
+  transition: all var(--transition-fast);
+  position: relative;
+  border-radius: 8px;
+  margin: 0 4px;
+}
+
+.header-center :deep(.el-menu-item:hover) {
+  color: var(--primary-color);
+  background-color: var(--bg-secondary);
+  transform: translateY(-2px);
+}
+
+.header-center :deep(.el-menu-item.is-active) {
+  color: var(--primary-color);
+  background-color: var(--bg-primary);
+  border-bottom: none;
+  box-shadow: inset 0 -2px 0 var(--primary-color);
+}
+
+.header-center :deep(.el-menu-item.is-active)::after {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(64, 158, 255, 0.5);
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   flex-shrink: 0;
 }
 
 .message-icon {
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  padding: 10px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
+  color: var(--text-regular);
+  position: relative;
 }
 
 .message-icon:hover {
-  background-color: #f5f7fa;
+  background-color: var(--bg-secondary);
+  color: var(--primary-color);
+  transform: translateY(-2px);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  padding: 6px 12px;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
 }
 
 .user-info:hover {
-  background-color: #f5f7fa;
+  background-color: var(--bg-secondary);
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
 }
 
 .username {
   font-size: 14px;
-  color: #303133;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* 用户头像样式 */
+.user-info :deep(.el-avatar) {
+  transition: all var(--transition-fast);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-info:hover :deep(.el-avatar) {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .auth-buttons {
@@ -207,9 +326,60 @@ const goToRegister = () => {
   gap: 12px;
 }
 
+/* 登录注册按钮样式 */
+.auth-buttons :deep(.el-button) {
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  padding: 8px 20px;
+  transition: all var(--transition-fast);
+}
+
+.auth-buttons :deep(.el-button--text) {
+  color: var(--text-regular);
+}
+
+.auth-buttons :deep(.el-button--text:hover) {
+  color: var(--primary-color);
+  background-color: var(--bg-secondary);
+}
+
+.auth-buttons :deep(.el-button--primary) {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-buttons :deep(.el-button--primary:hover) {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
 .main-content {
   flex: 1;
-  padding: 20px;
-  background-color: #f5f7fa;
+  padding: 30px;
+  background-color: var(--bg-secondary);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 20px;
+  }
+  
+  .header-center {
+    margin: 0 20px;
+  }
+  
+  .header-center :deep(.el-menu-item) {
+    padding: 0 16px;
+  }
+  
+  .username {
+    display: none;
+  }
+  
+  .main-content {
+    padding: 20px;
+  }
 }
 </style>
